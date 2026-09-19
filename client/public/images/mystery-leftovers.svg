@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+  <rect width="320" height="240" fill="#D9E4EA"/>
+  <rect x="80" y="40" width="160" height="170" rx="8" fill="#9BB4C4"/>
+  <rect x="92" y="54" width="136" height="142" rx="4" fill="#EEF6FA"/>
+  <rect x="108" y="78" width="104" height="70" rx="8" fill="#C45C26"/>
+  <rect x="118" y="88" width="84" height="14" fill="#F5C518"/>
+  <text x="160" y="155" text-anchor="middle" font-size="28" font-family="Georgia">?</text>
+</svg>

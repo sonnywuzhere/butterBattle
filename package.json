@@ -1,0 +1,19 @@
+{
+  "name": "butter-battle",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c yellow,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "test": "npm run test -w shared && npm run test -w server",
+    "start": "npm run start -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

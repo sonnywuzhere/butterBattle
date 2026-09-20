@@ -1,5 +1,5 @@
 import type { PublicPlayer, RoomSnapshot } from "@butter/shared";
-import { monogram } from "@butter/shared";
+import { monogram, SIZZLES } from "@butter/shared";
 import { useEffect, useState } from "react";
 
 export function useCountdown(endsAt?: number) {
@@ -163,4 +163,63 @@ export function ScoreStrip({ snap }: { snap: RoomSnapshot }) {
   );
 }
 
-export const SIZZLES = ["😂", "🔥", "🥰", "🧈", "🫠"];
+export { SIZZLES };
+
+export type SizzleBurst = { id: number; emoji: string; x: number };
+
+export type RevealKind = "buttered" | "spread" | null;
+
+export function RevealFX({ kind, seed }: { kind: RevealKind; seed: string }) {
+  if (!kind) return null;
+  const n = kind === "buttered" ? 18 : 12;
+  const bits = Array.from({ length: n }, (_, i) => {
+    const h = seed.split("").reduce((a, c) => a + c.charCodeAt(0) * (i + 1), 0);
+    const x = (h * 17 + i * 53) % 100;
+    const delay = ((h + i * 13) % 40) / 100;
+    const dur = 1.6 + ((h + i) % 8) / 10;
+    const emoji =
+      kind === "buttered" ? (i % 4 === 0 ? "✨" : "🧈") : i % 2 === 0 ? "🍞" : "🫠";
+    return { i, x, delay, dur, emoji };
+  });
+  return (
+    <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+      <p
+        className={`stamp-in font-display absolute left-1/2 top-[28%] w-[90%] text-center leading-none ${
+          kind === "buttered" ? "text-butter" : "text-crust"
+        }`}
+        style={{ fontSize: kind === "buttered" ? "3.4rem" : "2.6rem" }}
+      >
+        {kind === "buttered" ? "BUTTER'D!" : "SPREAD THIN"}
+      </p>
+      {bits.map((b) => (
+        <span
+          key={b.i}
+          className="butter-fall absolute -top-8 text-3xl"
+          style={{
+            left: `${b.x}%`,
+            animationDelay: `${b.delay}s`,
+            animationDuration: `${b.dur}s`,
+          }}
+        >
+          {b.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function SizzleLayer({ bursts }: { bursts: SizzleBurst[] }) {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      {bursts.map((b) => (
+        <span
+          key={b.id}
+          className="animate-sizzle absolute bottom-28 text-5xl drop-shadow"
+          style={{ left: `${b.x}%` }}
+        >
+          {b.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}

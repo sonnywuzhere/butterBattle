@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import express from "express";
 import { Server } from "socket.io";
-import { parseRoomCode, type RoomSettings } from "@butter/shared";
+import { parseRoomCode, SIZZLES, type RoomSettings } from "@butter/shared";
 import { loadLiveRooms, purgeExpired, watchRoom } from "./db.js";
 import { Lobby } from "./room.js";
 
@@ -170,11 +170,16 @@ io.on("connection", (socket) => {
   socket.on("react:send", (payload: { emoji: string }) => {
     const room = roomFor(socket.id);
     if (!room) return;
+    const emoji = payload?.emoji;
+    if (!SIZZLES.includes(emoji as (typeof SIZZLES)[number])) return;
     room.sizzle();
-    io.to(room.code).emit("react:broadcast", {
-      emoji: payload.emoji,
-      fromPlayer: playerFor(socket.id, room),
-    });
+    const packet = { emoji, fromPlayer: playerFor(socket.id, room) };
+    const seen = new Set<string>();
+    for (const sid of room.sockets.values()) {
+      if (seen.has(sid)) continue;
+      seen.add(sid);
+      io.to(sid).emit("react:broadcast", packet);
+    }
   });
 
   socket.on("game:playAgain", () => {

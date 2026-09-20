@@ -15,3 +15,83 @@ body {
 button {
   -webkit-tap-highlight-color: transparent;
 }
+
+@keyframes sizzle {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  12% {
+    transform: translateY(-12px) scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-72vh) scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-sizzle {
+  animation: sizzle 1.25s ease-out forwards;
+}
+
+@keyframes stamp-in {
+  0% {
+    transform: translateX(-50%) scale(2.4) rotate(-14deg);
+    opacity: 0;
+  }
+  16% {
+    transform: translateX(-50%) scale(1) rotate(-7deg);
+    opacity: 1;
+  }
+  62% {
+    transform: translateX(-50%) scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.94) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+.stamp-in {
+  animation: stamp-in 1.45s cubic-bezier(0.2, 1.5, 0.3, 1) forwards;
+  text-shadow: 0 4px 0 #c9a015, 0 8px 24px rgba(42, 28, 18, 0.25);
+}
+
+@keyframes butter-fall {
+  0% {
+    transform: translateY(-8vh) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(240deg);
+    opacity: 0;
+  }
+}
+
+.butter-fall {
+  animation-name: butter-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes win-pop {
+  0% {
+    transform: scale(0.96);
+  }
+  40% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.win-pop {
+  animation: win-pop 0.55s ease-out;
+  box-shadow: 0 0 0 4px #f5c518;
+}

@@ -13,7 +13,7 @@ import {
   VoteScreen,
 } from "./screens";
 import { loadPlayer, socket, storePlayer } from "./socket";
-import { Shell, Wordmark } from "./ui";
+import { Shell, SizzleLayer, Wordmark, type SizzleBurst } from "./ui";
 
 export default function App() {
   return (
@@ -54,6 +54,7 @@ function KitchenPage() {
   const [snap, setSnap] = useState<RoomSnapshot | null>(null);
   const [name, setName] = useState(locState?.name ?? "");
   const [needName, setNeedName] = useState(false);
+  const [sizzles, setSizzles] = useState<SizzleBurst[]>([]);
 
   useEffect(() => {
     const join = () => {
@@ -75,12 +76,24 @@ function KitchenPage() {
       setSnap(s);
       if (s.youId) storePlayer(s.code, s.youId);
     };
+    const onSizzle = (payload: { emoji?: string }) => {
+      const emoji = payload?.emoji;
+      if (!emoji) return;
+      const id = Date.now() + Math.random();
+      const burst: SizzleBurst = { id, emoji, x: 8 + Math.random() * 78 };
+      setSizzles((cur) => [...cur.slice(-24), burst]);
+      window.setTimeout(() => {
+        setSizzles((cur) => cur.filter((b) => b.id !== id));
+      }, 1300);
+    };
     socket.on("state:update", onState);
+    socket.on("react:broadcast", onSizzle);
     socket.on("connect", join);
     if (socket.connected) join();
     else socket.connect();
     return () => {
       socket.off("state:update", onState);
+      socket.off("react:broadcast", onSizzle);
       socket.off("connect", join);
     };
   }, [code, locState?.playerId, locState?.name]);
@@ -128,27 +141,29 @@ function KitchenPage() {
 
   const youAreHost =
     snap.youId === snap.hostId || !!snap.players.find((p) => p.id === snap.youId)?.isHost;
-  if (snap.phase === "lobby") return <KitchenLobby snap={snap} socket={socket} youAreHost={youAreHost} />;
-  if (snap.phase === "round_answer") return <AnswerScreen snap={snap} socket={socket} />;
-  if (snap.phase === "round_vote" && snap.voteSubphase === "reveal") {
-    return <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
-  }
-  if (snap.phase === "round_vote" && snap.roundKind === "everyone_answers") {
-    return <BallotScreen snap={snap} socket={socket} />;
-  }
-  if (snap.phase === "round_vote") return <VoteScreen snap={snap} socket={socket} />;
-  if (snap.phase === "round_score" || snap.phase === "finale_score") {
-    return <Scoreboard snap={snap} socket={socket} youAreHost={youAreHost} />;
-  }
-  if (snap.phase === "finale_answer") return <FinaleAnswer snap={snap} socket={socket} />;
-  if (snap.phase === "finale_vote" && snap.voteSubphase === "reveal") {
-    return <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
-  }
-  if (snap.phase === "finale_vote") return <BallotScreen snap={snap} socket={socket} />;
-  if (snap.phase === "game_over") return <Results snap={snap} socket={socket} youAreHost={youAreHost} />;
-  return (
+  let screen = (
     <Shell>
       <p>Unknown phase: {snap.phase}</p>
     </Shell>
+  );
+  if (snap.phase === "lobby") screen = <KitchenLobby snap={snap} socket={socket} youAreHost={youAreHost} />;
+  else if (snap.phase === "round_answer") screen = <AnswerScreen snap={snap} socket={socket} />;
+  else if (snap.phase === "round_vote" && snap.voteSubphase === "reveal") {
+    screen = <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
+  } else if (snap.phase === "round_vote" && snap.roundKind === "everyone_answers") {
+    screen = <BallotScreen snap={snap} socket={socket} />;
+  } else if (snap.phase === "round_vote") screen = <VoteScreen snap={snap} socket={socket} />;
+  else if (snap.phase === "round_score" || snap.phase === "finale_score") {
+    screen = <Scoreboard snap={snap} socket={socket} youAreHost={youAreHost} />;
+  } else if (snap.phase === "finale_answer") screen = <FinaleAnswer snap={snap} socket={socket} />;
+  else if (snap.phase === "finale_vote" && snap.voteSubphase === "reveal") {
+    screen = <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
+  } else if (snap.phase === "finale_vote") screen = <BallotScreen snap={snap} socket={socket} />;
+  else if (snap.phase === "game_over") screen = <Results snap={snap} socket={socket} youAreHost={youAreHost} />;
+  return (
+    <>
+      <SizzleLayer bursts={sizzles} />
+      {screen}
+    </>
   );
 }

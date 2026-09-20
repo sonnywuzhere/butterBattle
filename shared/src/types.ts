@@ -1,3 +1,6 @@
+export const SIZZLES = ["😂", "🔥", "🥰", "🧈", "🫠"] as const;
+export type SizzleEmoji = (typeof SIZZLES)[number];
+
 export const MIN_PLAYERS = 4;
 export const MAX_PLAYERS = 8;
 

@@ -1,7 +1,18 @@
 import { PLAYER_COLORS, type RoomSettings, type RoomSnapshot } from "@butter/shared";
 import { useState } from "react";
 import type { Socket } from "socket.io-client";
-import { Avatar, Btn, Field, ScoreStrip, Shell, SIZZLES, Timer, WaitingOn, Wordmark } from "./ui";
+import {
+  Avatar,
+  Btn,
+  Field,
+  RevealFX,
+  ScoreStrip,
+  Shell,
+  SIZZLES,
+  Timer,
+  WaitingOn,
+  Wordmark,
+} from "./ui";
 
 export function Landing({
   onCreate,
@@ -349,8 +360,15 @@ export function RevealScreen({
 }) {
   const r = snap.reveal;
   if (!r) return <NWayReveal snap={snap} socket={socket} youAreHost={youAreHost} />;
+  const fx =
+    r.winner === "tie"
+      ? "spread"
+      : r.eligible > 0 && (r.votesA === r.eligible || r.votesB === r.eligible)
+        ? "buttered"
+        : null;
   return (
     <Shell>
+      <RevealFX kind={fx} seed={r.matchupId} />
       <Header snap={snap} title="Look at your phones" />
       <Timer endsAt={snap.timerEndsAt} label="Next in" />
       <p className="text-center text-sm font-bold text-crust/60">read it aloud</p>
@@ -380,6 +398,7 @@ export function RevealScreen({
         ))}
       </ul>
       <SkipWait socket={socket} youAreHost={youAreHost} />
+      {socket && <SizzleBar socket={socket} />}
     </Shell>
   );
 }
@@ -401,8 +420,11 @@ function NWayReveal({
       <Timer endsAt={snap.timerEndsAt} label="Next in" />
       <p className="font-display text-lg">{r.promptText}</p>
       <ul className="mt-4 space-y-2">
-        {r.results.map((row) => (
-          <li key={row.playerId} className="rounded-2xl bg-white/80 p-3">
+        {r.results.map((row, i) => (
+          <li
+            key={row.playerId}
+            className={`rounded-2xl p-3 ${i === 0 ? "win-pop bg-butter" : "bg-white/80"}`}
+          >
             <div className="flex items-center justify-between gap-2">
               <span className="font-extrabold">{row.name}</span>
               <span className="text-sm">
@@ -419,6 +441,7 @@ function NWayReveal({
         ))}
       </ul>
       <SkipWait socket={socket} youAreHost={youAreHost} />
+      {socket && <SizzleBar socket={socket} />}
     </Shell>
   );
 }
@@ -437,7 +460,7 @@ function RevealCard({
   win: boolean;
 }) {
   return (
-    <div className={`rounded-3xl p-4 ${win ? "bg-butter" : "bg-white/80"}`}>
+    <div className={`rounded-3xl p-4 ${win ? "win-pop bg-butter" : "bg-white/80"}`}>
       <div className="mb-2 flex items-center gap-2">
         <Avatar player={player} size={32} />
         <span className="font-extrabold">{player.name}</span>
@@ -657,7 +680,7 @@ function SizzleBar({ socket }: { socket: Socket }) {
         <button
           key={e}
           type="button"
-          className="h-12 w-12 rounded-full bg-white text-xl shadow-sm"
+          className="h-12 w-12 rounded-full bg-white text-xl shadow-sm active:scale-90"
           onClick={() => socket.emit("react:send", { emoji: e })}
         >
           {e}

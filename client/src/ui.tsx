@@ -119,13 +119,17 @@ export function Avatar({
   );
 }
 
-export function Timer({ endsAt }: { endsAt?: number }) {
+export function Timer({ endsAt, label }: { endsAt?: number; label?: string }) {
   const s = useCountdown(endsAt);
+  if (!endsAt) return null;
   return (
-    <div
-      className={`text-center font-display text-3xl ${s <= 5 ? "text-burnt" : "text-crust"}`}
-    >
-      {s}s
+    <div className="text-center">
+      {label && (
+        <p className="text-sm font-bold uppercase tracking-widest text-crust/60">{label}</p>
+      )}
+      <div className={`font-display text-4xl tabular-nums ${s <= 5 ? "text-burnt" : "text-crust"}`}>
+        {s}s
+      </div>
     </div>
   );
 }

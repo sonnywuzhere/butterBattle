@@ -212,6 +212,7 @@ export function AnswerScreen({ snap, socket }: { snap: RoomSnapshot; socket: Soc
   return (
     <Shell>
       <Header snap={snap} title={snap.roundKind === "everyone_answers" ? "One Pot" : `Round ${snap.round}`} />
+      <RulesCard text={answerRules(snap)} />
       <Timer endsAt={snap.timerEndsAt} />
       <div className="mt-4 space-y-5">
         {prompts.map((p) => (
@@ -279,6 +280,7 @@ export function VoteScreen({ snap, socket }: { snap: RoomSnapshot; socket: Socke
   return (
     <Shell>
       <Header snap={snap} title={`Matchup ${m.index + 1} / ${m.total}`} />
+      <RulesCard text={voteRules(snap)} />
       <ScoreStrip snap={snap} />
       <Timer endsAt={snap.timerEndsAt} />
       <p className="mt-2 text-center font-display text-lg">{m.promptText}</p>
@@ -312,6 +314,7 @@ export function BallotScreen({ snap, socket }: { snap: RoomSnapshot; socket: Soc
   return (
     <Shell>
       <Header snap={snap} title={snap.phase === "finale_vote" ? finaleTitle(snap) : "One Pot"} />
+      <RulesCard text={voteRules(snap)} />
       <Timer endsAt={snap.timerEndsAt} />
       <p className="mt-2 font-display text-xl">{b.promptText}</p>
       <div className="mt-4 space-y-2">
@@ -335,12 +338,21 @@ export function BallotScreen({ snap, socket }: { snap: RoomSnapshot; socket: Soc
   );
 }
 
-export function RevealScreen({ snap }: { snap: RoomSnapshot }) {
+export function RevealScreen({
+  snap,
+  socket,
+  youAreHost,
+}: {
+  snap: RoomSnapshot;
+  socket?: Socket;
+  youAreHost?: boolean;
+}) {
   const r = snap.reveal;
-  if (!r) return <NWayReveal snap={snap} />;
+  if (!r) return <NWayReveal snap={snap} socket={socket} youAreHost={youAreHost} />;
   return (
     <Shell>
       <Header snap={snap} title="Look at your phones" />
+      <Timer endsAt={snap.timerEndsAt} label="Next in" />
       <p className="text-center text-sm font-bold text-crust/60">read it aloud</p>
       <p className="mt-3 text-center font-display text-lg">{r.promptText}</p>
       <div className="mt-4 space-y-3">
@@ -367,16 +379,26 @@ export function RevealScreen({ snap }: { snap: RoomSnapshot }) {
           <li key={i}>{c.text}</li>
         ))}
       </ul>
+      <SkipWait socket={socket} youAreHost={youAreHost} />
     </Shell>
   );
 }
 
-function NWayReveal({ snap }: { snap: RoomSnapshot }) {
+function NWayReveal({
+  snap,
+  socket,
+  youAreHost,
+}: {
+  snap: RoomSnapshot;
+  socket?: Socket;
+  youAreHost?: boolean;
+}) {
   const r = snap.finaleReveal;
   if (!r) return null;
   return (
     <Shell>
       <Header snap={snap} title="The crowd has spoken" />
+      <Timer endsAt={snap.timerEndsAt} label="Next in" />
       <p className="font-display text-lg">{r.promptText}</p>
       <ul className="mt-4 space-y-2">
         {r.results.map((row) => (
@@ -396,6 +418,7 @@ function NWayReveal({ snap }: { snap: RoomSnapshot }) {
           </li>
         ))}
       </ul>
+      <SkipWait socket={socket} youAreHost={youAreHost} />
     </Shell>
   );
 }
@@ -427,10 +450,21 @@ function RevealCard({
   );
 }
 
-export function Scoreboard({ snap, nested }: { snap: RoomSnapshot; nested?: boolean }) {
+export function Scoreboard({
+  snap,
+  nested,
+  socket,
+  youAreHost,
+}: {
+  snap: RoomSnapshot;
+  nested?: boolean;
+  socket?: Socket;
+  youAreHost?: boolean;
+}) {
   const body = (
     <>
       {!nested && <Header snap={snap} title={snap.phase === "finale_score" ? "Finale" : `Round ${snap.round}`} />}
+      {!nested && <Timer endsAt={snap.timerEndsAt} label={scoreboardLabel(snap)} />}
       <ul className={nested ? "space-y-2" : "mt-4 space-y-2"}>
         {(snap.standings ?? []).map((p, i) => (
           <li key={p.id} className="flex items-center gap-3 rounded-2xl bg-white/80 px-3 py-3">
@@ -444,6 +478,7 @@ export function Scoreboard({ snap, nested }: { snap: RoomSnapshot; nested?: bool
           </li>
         ))}
       </ul>
+      {!nested && <SkipWait socket={socket} youAreHost={youAreHost} />}
     </>
   );
   return nested ? body : <Shell>{body}</Shell>;
@@ -462,6 +497,7 @@ export function FinaleAnswer({ snap, socket }: { snap: RoomSnapshot; socket: Soc
   return (
     <Shell>
       <Header snap={snap} title={finaleTitle(snap)} />
+      <RulesCard text={answerRules(snap)} />
       <Timer endsAt={snap.timerEndsAt} />
       <p className="mt-3 font-display text-xl">{f.promptText}</p>
       {f.submitted ? (
@@ -546,6 +582,70 @@ function Header({ snap, title }: { snap: RoomSnapshot; title: string }) {
     <div className="mb-2 flex items-center justify-between">
       <p className="font-display text-xl">{title}</p>
       <p className="text-xs font-bold tracking-widest text-crust/50">{snap.code}</p>
+    </div>
+  );
+}
+
+function RulesCard({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <p className="mb-2 rounded-2xl bg-white/80 px-3 py-2 text-sm leading-snug text-crust/80">{text}</p>
+  );
+}
+
+function answerRules(snap: RoomSnapshot): string {
+  const wager = snap.settings.doubleButter
+    ? " You can Double Butter one prompt: win doubles those points, lose costs a stake."
+    : "";
+  if (snap.phase === "finale_answer") {
+    const format = snap.finale?.format;
+    if (format === "three_spreads") {
+      return "Write 3 short answers to one prompt. They stay together as your set. Then the room votes for a whole trio — not yours.";
+    }
+    if (format === "hot_pan") {
+      return "1 prompt, 1 answer. Fast. Then pick your favorite — not your own.";
+    }
+    return "Fill 3 blanks to make one joke. Everyone writes their own. Then vote for the funniest complete line — not yours.";
+  }
+  if (snap.roundKind === "everyone_answers") {
+    return "Everyone answers the same 1 prompt. Then the room picks a favorite (not your own). Points are worth more this round.";
+  }
+  if (snap.round === 2) {
+    return `Same deal: 2 answers, each a head-to-head. Points are worth more this round.${wager}`;
+  }
+  return `Write 2 answers. Each prompt is a head-to-head: someone else is writing the same one, then the room votes.${wager} Some prompts are fill-in-the-blank or a fridge pic.`;
+}
+
+function voteRules(snap: RoomSnapshot): string {
+  if (snap.phase === "finale_vote" || snap.roundKind === "everyone_answers") {
+    const format = snap.finale?.format ?? snap.finaleReveal?.format;
+    if (snap.phase === "finale_vote" && format === "three_spreads") {
+      return "Pick a whole trio. You can't vote for yourself.";
+    }
+    if (snap.phase === "finale_vote" && format === "triple_churn") {
+      return "Pick the funniest complete line. You can't vote for yourself.";
+    }
+    return "Pick one favorite. You can't vote for yourself.";
+  }
+  if (snap.matchup?.youAreAuthor) {
+    return "This one's yours — you don't vote. Watch the room pick.";
+  }
+  return "Two anonymous answers. Everyone except the two writers picks the funnier one.";
+}
+
+function scoreboardLabel(snap: RoomSnapshot) {
+  if (snap.phase === "finale_score") return "Results in";
+  if (snap.round === 2) return "Finale in";
+  return "Next round in";
+}
+
+function SkipWait({ socket, youAreHost }: { socket?: Socket; youAreHost?: boolean }) {
+  if (!youAreHost || !socket) return null;
+  return (
+    <div className="mt-6">
+      <Btn tone="ghost" onClick={() => socket.emit("host:advance")}>
+        Skip wait
+      </Btn>
     </div>
   );
 }

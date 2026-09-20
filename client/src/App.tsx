@@ -130,14 +130,20 @@ function KitchenPage() {
     snap.youId === snap.hostId || !!snap.players.find((p) => p.id === snap.youId)?.isHost;
   if (snap.phase === "lobby") return <KitchenLobby snap={snap} socket={socket} youAreHost={youAreHost} />;
   if (snap.phase === "round_answer") return <AnswerScreen snap={snap} socket={socket} />;
-  if (snap.phase === "round_vote" && snap.voteSubphase === "reveal") return <RevealScreen snap={snap} />;
+  if (snap.phase === "round_vote" && snap.voteSubphase === "reveal") {
+    return <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
+  }
   if (snap.phase === "round_vote" && snap.roundKind === "everyone_answers") {
     return <BallotScreen snap={snap} socket={socket} />;
   }
   if (snap.phase === "round_vote") return <VoteScreen snap={snap} socket={socket} />;
-  if (snap.phase === "round_score" || snap.phase === "finale_score") return <Scoreboard snap={snap} />;
+  if (snap.phase === "round_score" || snap.phase === "finale_score") {
+    return <Scoreboard snap={snap} socket={socket} youAreHost={youAreHost} />;
+  }
   if (snap.phase === "finale_answer") return <FinaleAnswer snap={snap} socket={socket} />;
-  if (snap.phase === "finale_vote" && snap.voteSubphase === "reveal") return <RevealScreen snap={snap} />;
+  if (snap.phase === "finale_vote" && snap.voteSubphase === "reveal") {
+    return <RevealScreen snap={snap} socket={socket} youAreHost={youAreHost} />;
+  }
   if (snap.phase === "finale_vote") return <BallotScreen snap={snap} socket={socket} />;
   if (snap.phase === "game_over") return <Results snap={snap} socket={socket} youAreHost={youAreHost} />;
   return (
